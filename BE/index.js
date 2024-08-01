@@ -44,7 +44,7 @@ app.get('/installExtension', async (req, res) => {
   res.send("Table created successfully");
  });
 
- // Create
+ // CREATE users
  app.post("/users/create", async (req, res) => {
   const { email, name, password, avatar_img, currency_type } =req.body;
   const queryText = `INSERT INTO users ( email, name, password, avatar_img, currency_type) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
@@ -63,7 +63,50 @@ app.get('/installExtension', async (req, res) => {
   res.status(500).json({error: "Database error"});
 }
  });
-  
+//done
+
+
+//SELECT users
+ app.get("/users", async (req, res) => {
+  const queryText = `
+  SELECT * FROM users
+  `;
+
+  try {
+    const result = await db.query(queryText);
+    res.send(result.rows);
+    }
+    catch (error) {
+      console.error("error")
+    }
+    res.send("users selected");
+ });
+//Done
+
+
+//UPDATE
+app.put("/users/:id", async (req, res) => {
+  const { id } = req.params;
+  const { name, email } = req.body;
+
+  try {
+    const result = await db.query(
+      "UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING *",
+      [name, email, id]
+    );
+    if (result.rows.length === 0) {
+      res.status(404).json({ error: "users not found" });
+    }
+    else {
+      res.status(200).json(result.rows[0]);
+    }
+  }
+  catch (err) {
+    console.error(err);
+    res.status(500).json({error: "Database error"});
+  }
+});
+//Done
 
 //   `;
 //   try {
