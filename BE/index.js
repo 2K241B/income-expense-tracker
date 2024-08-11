@@ -1,27 +1,38 @@
 import bodyParser from "body-parser";
 import express from "express";
-import fs from "node:fs";
+import { user } from "./src/router/user.js";
 import cors from "cors";
 import { db } from "./db.js";
+import { record } from "./src/router/record.js";
+import { category } from "./src/controller/category.js";
+import { auth } from "./src/router/auth.js";
 
 const app = express();
 const port = 8000;
 
 app.use(bodyParser.json());
 app.use(cors());
+app.use('/users', user);
+app.use('/record', record);
+app.use('/category', category);
+app.use('/api/', auth);
 
-app.get('/installExtension', async (req, res) => {
-  const tableQueryText = `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`
+
+
+app.get("/installExtension", async (req, res) => {
+  const tableQueryText = `CREATE EXTENSION IF NOT EXISTS "uuid-ossp"`;
   try {
-  db.query(tableQueryText);
+    db.query(tableQueryText);
 
-  res.send ("success");
+    res.send("success");
   } catch (error) {
-    console.log (error)
+    console.log(error);
   }
 });
 
- app.get('/', async (req, res) => {
+
+//CREATE TABLE-USERS
+app.get("/users/createTable", async (req, res) => {
   const tableQueryText = `
   CREATE TABLE IF NOT EXISTS users (
    id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -36,112 +47,66 @@ app.get('/installExtension', async (req, res) => {
   )`;
 
   try {
-  db.query(tableQueryText)
-  }
-  catch (error) {
-    console.error("error")
+    db.query(tableQueryText);
+  } catch (error) {
+    console.error("error");
   }
   res.send("Table created successfully");
- });
-
- // CREATE users
- app.post("/users/create", async (req, res) => {
-  const { email, name, password, avatar_img, currency_type } =req.body;
-  const queryText = `INSERT INTO users ( email, name, password, avatar_img, currency_type) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
-  
-  try {
-  const result = await db.query(queryText, [
-    email,
-    name,
-    password,
-    avatar_img,
-    currency_type
-  ]);
-  res.status(201).json(result.rows[0]);
-} catch (err) {
-  console.error(err);
-  res.status(500).json({error: "Database error"});
-}
- });
-//done
+});
 
 
-//SELECT users
- app.get("/users", async (req, res) => {
-  const queryText = `
-  SELECT * FROM users
-  `;
+
+//CREATE TABLE-RECORD
+app.get("/record/createTable", async (req, res) => {
+  const tableQueryText = `
+  CREATE TABLE "record" (
+  id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+  user_id uuid NOT NULL,
+  category_id uuid NOT NULL,
+  name TEXT,
+  amount REAL NOT NULL,
+  transaction_type TEXT DEFAULT 'INC' NOT NULL,
+  description TEXT,
+  createdAT TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) references users(id),
+  FOREIGN KEY (category_id) references category(id),
+
+  )`;
 
   try {
-    const result = await db.query(queryText);
-    res.send(result.rows);
-    }
-    catch (error) {
-      console.error("error")
-    }
-    res.send("users selected");
- });
-//Done
-
-
-//UPDATE
-app.put("/users/:id", async (req, res) => {
-  const { id } = req.params;
-  const { name, email } = req.body;
-
-  try {
-    const result = await db.query(
-      "UPDATE users SET name = $1, email = $2 WHERE id = $3 RETURNING *",
-      [name, email, id]
-    );
-    if (result.rows.length === 0) {
-      res.status(404).json({ error: "users not found" });
-    }
-    else {
-      res.status(200).json(result.rows[0]);
-    }
+    db.query(tableQueryText);
+  } catch (error) {
+    console.error("error");
   }
-  catch (err) {
-    console.error(err);
-    res.status(500).json({error: "Database error"});
-  }
+  res.send("Table created successfully");
 });
 //Done
 
-//   `;
-//   try {
-//     db.query(queryText)
-//     }
-//     catch (error) {
-//       console.error("error")
-//     }
-//     res.send("user inserted successfully");
-//  })
-
-//  app.get("/getUsers", async (req, res) => {
-//   const queryText = `
-//   SELECT * FROM users
-//   `;
-//   try {
-//     const result = await db.query(queryText);
-//     res.send(result.rows);
-//     }
-//     catch (error) {
-//       console.error("error")
-//     }
-//     res.send("user inserted successfully");
-//  });
- 
-
-// // app.post('/', (req, res) => {
-// //     res.send ("success!");
-// // })
 
 
-//   // app.get('/getData', (req, res) => {
-    
-//   //   res.send(data);
-//   // })
+//CREATE TABLE-CATEGORY
+app.get("/category/createTable", async (req, res) => {
+  const tableQueryText = `
+  CREATE TABLE IF NOT EXISTS category (
+   id uuid PRIMARY KEY DEFAULT uuid_generate_v4(),
+   name VARCHAR(100),
+   description TEXT,
+   createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+   category_image TEXT
+  )`;
+
+  try {
+    db.query(tableQueryText);
+  } catch (error) {
+    console.error("error");
+  }
+  res.send("Table created successfully");
+});
+//Done
+
+
 app.listen(port, () => {
-    console.log(`Example app listening on port ${port}`)
-})
+  console.log(`Example app listening on port ${port}`);
+});
