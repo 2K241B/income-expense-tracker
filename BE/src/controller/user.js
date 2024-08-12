@@ -22,13 +22,13 @@ export const createUsers = async (req, res) => {
 
 
 //SELECT users
-export const getUser = async (req, res) => {
-    const { email } = req.body;
-    const queryText = "SELECT * FROM users WHERE email = $1";
+export const getUsersWithFilter = async (req, res) => {
+    const { name, email } = req.body;
+    const queryText = "SELECT * FROM users WHERE name = $1 OR email = $2";
   
     try {
-      const result = await db.query(queryText, {email});
-      return result.rows;
+      const result = await db.query(queryText, {name, email});
+      res.status(200).json(result.rows);
     } catch (error) {
       console.error("error");
       res.send(error);
